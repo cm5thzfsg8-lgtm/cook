@@ -10,7 +10,6 @@
         h1 { color: #16a34a; text-align: center; font-size: 24px; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
         
-        /* 아카이브(수업 창고) 스타일 */
         .archive-section { background-color: #fef3c7; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
         .archive-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #d97706; cursor: pointer; }
         .archive-list { margin-top: 10px; display: none; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
@@ -35,15 +34,13 @@
         
         .ai-plan { background-color: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; line-height: 1.6; font-size: 15px; }
         
-        /* 체크리스트 영역 */
         .checklist-box { background-color: #fffbeb; padding: 15px; border-radius: 10px; border: 1px solid #fde68a; margin-bottom: 15px; font-size: 14px; }
         .checklist-box label { display: block; margin-bottom: 5px; cursor: pointer; }
         .checklist-box input[type="checkbox"] { margin-right: 8px; cursor: pointer; transform: scale(1.2); }
         .checklist-box input[type="checkbox"]:checked + span { text-decoration: line-through; color: #9ca3af; }
 
-        /* 마법 버튼 (디테일 추가) */
         .magic-buttons { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-        .magic-btn { flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; background-color: #e0e7ff; color: #4338ca; transition: 0.2s; }
+        .magic-btn { flex: 1 1 45%; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; background-color: #e0e7ff; color: #4338ca; transition: 0.2s; }
         .magic-btn:hover { background-color: #c7d2fe; }
         #magic-loading { display: none; text-align: center; font-size: 13px; color: #4338ca; margin-top: 10px; }
         #magic-result { display: none; background-color: #e0e7ff; padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 14px; line-height: 1.5; border: 1px solid #c7d2fe; }
@@ -68,8 +65,7 @@
         <div class="archive-header" onclick="toggleArchive()">
             📌 내 수업 창고 (저장된 수업 보기) <span>▼</span>
         </div>
-        <div class="archive-list" id="archive-list">
-            </div>
+        <div class="archive-list" id="archive-list"></div>
     </div>
 
     <div class="api-setup" id="api-setup-box">
@@ -101,11 +97,11 @@
         </div>
         
         <div class="checklist-box" id="prep-checklist"></div>
-
         <div class="ai-plan" id="ai-content"></div>
 
         <h3 style="color:#4338ca; margin-top:30px;">✨ 쌤봇 디테일 마법 (클릭!)</h3>
         <div class="magic-buttons">
+            <button class="magic-btn" onclick="runMagic('PPT')">🖥️ PPT 대본 뼈대 추출</button>
             <button class="magic-btn" onclick="runMagic('평어')">📝 나이스 평어 뽑기</button>
             <button class="magic-btn" onclick="runMagic('놀이변경')">🎲 다른 놀이로 변경</button>
             <button class="magic-btn" onclick="runMagic('퀴즈')">🖨️ 형성평가 퀴즈 생성</button>
@@ -119,7 +115,6 @@
 </div>
 
 <script>
-    // 현재 화면에 떠있는 수업 데이터를 임시 저장할 변수
     let currentLessonData = null;
 
     window.onload = function() {
@@ -128,7 +123,7 @@
             document.getElementById('api-key').value = savedKey;
             document.getElementById('api-setup-box').style.display = 'none';
         }
-        renderArchive(); // 로딩 시 저장된 창고 목록 불러오기
+        renderArchive();
     };
 
     function saveApiKey() {
@@ -140,7 +135,6 @@
         }
     }
 
-    // ★ 1. 메인 수업 생성 로직 ★
     async function generateLesson() {
         const apiKey = (localStorage.getItem('geminiApiKey') || document.getElementById('api-key').value).trim();
         const grade = document.getElementById('grade').value;
@@ -151,19 +145,16 @@
         if (!subject || !topic) { alert("과목과 목표를 모두 적어주세요!"); return; }
 
         document.getElementById('result-section').style.display = 'none';
-        document.getElementById('magic-result').style.display = 'none'; // 마법결과 초기화
+        document.getElementById('magic-result').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
-        // 프롬프트에 [준비물] 태그 추가
         const prompt = `당신은 탁월한 초등학교 교사입니다. 아래 대상과 목표를 바탕으로 40분 분량의 수업 계획을 짜주세요.
-
         [조건]
         1. 수업은 학생 참여형 위주로 [도입], [전개], [정리]로 명확히 나눌 것.
         2. 마지막에 [학부모 알림장 추천 문구] 포함할 것.
         3. 아래 양식을 반드시 엄격하게 지켜서 답변할 것. (대괄호 태그 필수)
-
         [준비물]
-        (교사 및 학생 준비물을 '-' 기호로 나열. 없으면 '- 특별한 준비물 없음' 작성)
+        (교사 및 학생 준비물을 '-' 기호로 나열)
         [수업계획]
         (여기에 다정한 말투로 수업 계획과 알림장 작성)
         [유튜브검색어]
@@ -185,7 +176,6 @@
 
             const fullText = data.candidates[0].content.parts[0].text;
             
-            // 정규식을 이용해 안전하게 데이터 분리
             const prepMatch = fullText.match(/\[준비물\]([\s\S]*?)\[수업계획\]/);
             const planMatch = fullText.match(/\[수업계획\]([\s\S]*?)\[유튜브검색어\]/);
             const ytMatch = fullText.match(/\[유튜브검색어\]([\s\S]*?)\[구글검색어\]/);
@@ -198,7 +188,6 @@
             let webQuery = webMatch ? webMatch[1].trim() : `${grade} ${subject} ${topic} 활동지`;
             let imgQuery = imgMatch ? imgMatch[1].trim() : `초등 ${topic} 시각자료`;
 
-            // 체크리스트 생성 로직
             const prepItems = prepText.split('\n').filter(item => item.trim() !== '');
             let checklistHTML = `<strong>☑️ 오늘 챙겨야 할 준비물</strong><br><br>`;
             prepItems.forEach((item, index) => {
@@ -207,21 +196,15 @@
             });
             document.getElementById('prep-checklist').innerHTML = checklistHTML;
 
-            // 수업 계획 출력
             document.getElementById('ai-content').innerHTML = lessonPlan.replace(/\n/g, '<br>');
 
-            // 버튼 출력
             document.getElementById('dynamic-links').innerHTML = `
                 <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브: "${ytQuery}"</a>
                 <a href="https://www.google.com/search?q=${encodeURIComponent(webQuery)}" target="_blank" class="link-btn google-web-btn">🔍 활동지: "${webQuery}"</a>
                 <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}" target="_blank" class="link-btn google-img-btn">🖼️ 시각자료: "${imgQuery}"</a>
             `;
 
-            // 현재 수업 정보 메모리 저장 (마법 버튼 및 아카이브용)
-            currentLessonData = {
-                title: `${grade} ${subject} - ${topic}`,
-                plan: lessonPlan
-            };
+            currentLessonData = { title: `${grade} ${subject} - ${topic}`, plan: lessonPlan };
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('result-section').style.display = 'block';
@@ -232,13 +215,15 @@
         }
     }
 
-    // ★ 2. 마법 버튼 (디테일 추가) 로직 ★
     async function runMagic(type) {
         if (!currentLessonData) return;
         const apiKey = localStorage.getItem('geminiApiKey');
         
         let magicPrompt = "";
-        if (type === '평어') {
+        // ★ PPT 추출 프롬프트 추가 ★
+        if (type === 'PPT') {
+            magicPrompt = `다음 수업 내용을 바탕으로, 교사가 수업 시간에 화면에 띄울 PPT 슬라이드의 뼈대와 대본을 구성해 줘.\n\n[조건]\n1. 슬라이드 5~7장 내외로 구성할 것.\n2. 각 슬라이드 번호마다 [화면에 띄울 텍스트/이미지 설명]과 [교사가 실제로 말할 대본]을 명확히 구분하여 작성해 줘.\n\n[수업내용]\n${currentLessonData.plan}`;
+        } else if (type === '평어') {
             magicPrompt = `다음 수업 내용을 바탕으로 나이스(NEIS) 교과학습발달상황에 복사해 넣을 수 있는 평가 기록(평어)을 '상, 중, 하' 3단계로 나누어 각각 1문장씩 작성해 줘.\n\n[수업내용]\n${currentLessonData.plan}`;
         } else if (type === '놀이변경') {
             magicPrompt = `다음 수업 내용 중 '전개(핵심활동)' 부분의 활동을 완전히 다른 새로운 놀이형 활동으로 1개 제안해 줘. 준비물이 적게 드는 활동이면 좋아.\n\n[수업내용]\n${currentLessonData.plan}`;
@@ -266,7 +251,6 @@
         }
     }
 
-    // ★ 3. 수업 창고 (아카이브) 로직 ★
     function toggleArchive() {
         const list = document.getElementById('archive-list');
         list.style.display = list.style.display === 'flex' ? 'none' : 'flex';
@@ -275,17 +259,10 @@
     function saveCurrentLesson() {
         if (!currentLessonData) return;
         let archive = JSON.parse(localStorage.getItem('lessonArchive') || '[]');
-        
-        // 날짜 추가
         const today = new Date();
         const dateStr = `${today.getMonth()+1}/${today.getDate()}`;
         
-        archive.push({
-            date: dateStr,
-            title: currentLessonData.title,
-            plan: currentLessonData.plan
-        });
-        
+        archive.push({ date: dateStr, title: currentLessonData.title, plan: currentLessonData.plan });
         localStorage.setItem('lessonArchive', JSON.stringify(archive));
         alert('내 창고에 안전하게 저장되었습니다! 📌');
         renderArchive();
@@ -301,9 +278,7 @@
             return;
         }
 
-        // 최신순으로 보여주기
         archive.reverse().forEach((item, idx) => {
-            // 실제 인덱스는 역순이므로 다시 계산
             const realIndex = archive.length - 1 - idx; 
             const div = document.createElement('div');
             div.className = 'archive-item';
@@ -323,14 +298,16 @@
         const item = archive[index];
         if(!item) return;
 
-        // 화면에 뿌려주기
         document.getElementById('prep-checklist').innerHTML = '<em>저장된 수업을 불러왔습니다. (준비물/마법은 새로고침 후 다시 생성 가능)</em>';
         document.getElementById('ai-content').innerHTML = item.plan.replace(/\n/g, '<br>');
-        document.getElementById('dynamic-links').innerHTML = ''; // 이전 검색버튼 숨김
+        document.getElementById('dynamic-links').innerHTML = ''; 
         document.getElementById('magic-result').style.display = 'none';
         
         document.getElementById('result-section').style.display = 'block';
         alert(`[${item.title}] 수업을 불러왔습니다!`);
+        
+        // 불러온 데이터로 현재 메모리 덮어쓰기 (마법 버튼 정상 작동을 위해)
+        currentLessonData = { title: item.title, plan: item.plan };
     }
 
     function deleteLesson(index) {
