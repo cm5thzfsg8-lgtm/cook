@@ -16,7 +16,6 @@
         input[type="text"], select { padding: 12px; font-size: 15px; border: 2px solid #bbf7d0; border-radius: 8px; outline: none; box-sizing: border-box; }
         input[type="text"]:focus, select:focus { border-color: #22c55e; }
         
-        /* 학년 선택과 과목 입력창 비율 조정 */
         #grade { width: 40%; }
         #subject { width: 60%; }
         #topic { width: 100%; }
@@ -66,6 +65,7 @@
         <h3 style="color:#16a34a;">📝 오늘의 수업 제안 & 알림장</h3>
         <div class="ai-plan" id="ai-content"></div>
         <h3 style="color:#16a34a; margin-top:30px;">🎯 맞춤형 자료 바로 찾기</h3>
+        <p style="font-size:13px; color:#666; margin-top:-5px;">(AI가 추천한 활동에 맞춰 최적화된 검색어입니다)</p>
         <div class="links-box" id="dynamic-links"></div>
     </div>
 </div>
@@ -91,22 +91,33 @@
     async function generateLesson() {
         const apiKey = (localStorage.getItem('geminiApiKey') || document.getElementById('api-key').value).trim();
         const grade = document.getElementById('grade').value;
-        const subject = document.getElementById('subject').value.trim(); // 띄어쓰기 방지
+        const subject = document.getElementById('subject').value.trim(); 
         const topic = document.getElementById('topic').value.trim();
 
         if (!apiKey) { alert("API 키를 먼저 입력해주세요!"); return; }
-        // 과목과 주제 중 하나라도 안 적으면 알려주기
         if (!subject) { alert("과목을 입력해주세요! (예: 도덕, 영어)"); return; }
         if (!topic) { alert("오늘의 핵심 목표를 입력해주세요!"); return; }
 
         document.getElementById('result-section').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
-        const prompt = `당신은 탁월한 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획과 학부모 알림장 문구를 작성해 주세요.
-        조건 1: 수업은 너무 뻔한 설명식 수업이 아닌, 학생 참여형 위주로 제안할 것.
-        조건 2: 수업 흐름은 [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
-        조건 3: 수업 계획 마지막에 **[학부모 알림장 추천 문구]**를 반드시 포함할 것. 단, 교사가 수업 활동을 자유롭게 변형할 수 있으므로 구체적인 활동 묘사는 피하고, '오늘 배운 내용의 교육적 의미'와 '가정에서 부모님이 어떻게 연계하여 대화하거나 지도해주시면 좋을지'에 초점을 맞춰 학부모님께 보내는 다정한 톤으로 작성할 것.
-        조건 4: 사용자를 "선생님"이라고 부르며 존중하고, 부드럽게 제안하는 말투를 사용할 것.
+        // ★ 프롬프트 대폭 수정: AI에게 양식을 강제하고 검색어를 직접 뽑게 함 ★
+        const prompt = `당신은 탁월한 초등학교 교사입니다. 아래 대상과 목표를 바탕으로 40분 분량의 수업 계획을 짜고, 그 수업 활동에 정확히 맞아떨어지는 검색어 3개를 추출해 주세요.
+
+        [조건]
+        1. 수업은 학생 참여형(놀이, 퀴즈, 조작 등) 위주로 [도입], [전개], [정리]로 명확히 나눌 것.
+        2. 마지막에 **[학부모 알림장 추천 문구]**를 포함할 것 (구체적 활동 묘사 대신 교육적 의미와 가정 연계 대화 위주).
+        3. 아래의 양식을 반드시 엄격하게 지켜서 답변할 것. (대괄호 태그를 꼭 쓸 것)
+
+        [수업계획]
+        (여기에 수업 계획과 알림장 내용 작성. "선생님~" 하는 다정한 말투 사용)
+        [유튜브검색어]
+        (위 수업의 동기유발에 보여주기 딱 좋은 구체적인 유튜브 검색어 딱 1개. 예: 초등 1학년 학교 탐방 애니메이션)
+        [구글검색어]
+        (위 수업의 전개 활동에 필요한 학습지나 PPT를 찾기 좋은 구체적인 구글 웹 검색어 딱 1개. 예: 학교 시설 빙고 도안 ppt)
+        [이미지검색어]
+        (위 수업에 필요한 시각 자료를 찾기 좋은 구체적인 구글 이미지 검색어 딱 1개. 예: 귀여운 학교 지도 일러스트)
+
         대상: ${grade} ${subject}, 학습목표: ${topic}`;
 
         try {
@@ -126,17 +137,38 @@
                 return;
             }
 
-            const aiText = data.candidates[0].content.parts[0].text;
-            document.getElementById('ai-content').innerHTML = aiText.replace(/\n/g, '<br>');
+            const fullText = data.candidates[0].content.parts[0].text;
 
-            const youtubeQuery = `초등 ${topic}`;
-            const googleWebQuery = `${grade} ${subject} ${topic} 수업 활동지 OR 학습지`;
-            const imageQuery = `초등 ${topic} 도안 OR 시각자료`;
+            // ★ AI가 보내준 텍스트를 쪼개서(파싱) 내용과 검색어를 분리하는 마법 ★
+            let lessonPlan = fullText;
+            let ytQuery = `초등 ${topic} 동기유발`;
+            let webQuery = `${grade} ${subject} ${topic} 활동지`;
+            let imgQuery = `초등 ${topic} 시각자료`;
+
+            if(fullText.includes('[유튜브검색어]')) {
+                const parts = fullText.split('[유튜브검색어]');
+                lessonPlan = parts[0].replace('[수업계획]', '').trim();
+                
+                const remaining1 = parts[1];
+                if(remaining1.includes('[구글검색어]')) {
+                    const parts2 = remaining1.split('[구글검색어]');
+                    ytQuery = parts2[0].trim();
+                    
+                    const remaining2 = parts2[1];
+                    if(remaining2.includes('[이미지검색어]')) {
+                        const parts3 = remaining2.split('[이미지검색어]');
+                        webQuery = parts3[0].trim();
+                        imgQuery = parts3[1].trim();
+                    }
+                }
+            }
+
+            document.getElementById('ai-content').innerHTML = lessonPlan.replace(/\n/g, '<br>');
 
             document.getElementById('dynamic-links').innerHTML = `
-                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브 관련 영상 (동기유발용)</a>
-                <a href="https://www.google.com/search?q=${encodeURIComponent(googleWebQuery)}" target="_blank" class="link-btn google-web-btn">🔍 구글 웹 검색 (수업 자료/활동지 찾기)</a>
-                <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imageQuery)}" target="_blank" class="link-btn google-img-btn">🖼️ 구글 이미지 (도안/시각자료 찾기)</a>
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브 검색: "${ytQuery}"</a>
+                <a href="https://www.google.com/search?q=${encodeURIComponent(webQuery)}" target="_blank" class="link-btn google-web-btn">🔍 구글 웹 검색: "${webQuery}"</a>
+                <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}" target="_blank" class="link-btn google-img-btn">🖼️ 이미지 검색: "${imgQuery}"</a>
             `;
 
             document.getElementById('loading').style.display = 'none';
