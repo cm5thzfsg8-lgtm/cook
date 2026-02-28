@@ -9,6 +9,14 @@
         .container { width: 100%; max-width: 500px; background-color: #fff; min-height: 100vh; padding: 20px; box-sizing: border-box; box-shadow: 0 0 15px rgba(0,0,0,0.05); }
         h1 { color: #16a34a; text-align: center; font-size: 24px; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+        
+        /* 아카이브(수업 창고) 스타일 */
+        .archive-section { background-color: #fef3c7; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .archive-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #d97706; cursor: pointer; }
+        .archive-list { margin-top: 10px; display: none; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+        .archive-item { background: white; padding: 10px; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #fde68a; }
+        .archive-item button { background: #ef4444; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 11px; }
+
         .api-setup { background-color: #f1f5f9; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; }
         .api-setup input { width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; }
         .input-group { display: flex; flex-direction: column; gap: 12px; }
@@ -24,13 +32,30 @@
         button.submit-btn:hover { background-color: #16a34a; }
         #loading { display: none; text-align: center; color: #16a34a; font-weight: bold; margin-top: 20px; }
         #result-section { display: none; margin-top: 25px; }
+        
         .ai-plan { background-color: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; line-height: 1.6; font-size: 15px; }
+        
+        /* 체크리스트 영역 */
+        .checklist-box { background-color: #fffbeb; padding: 15px; border-radius: 10px; border: 1px solid #fde68a; margin-bottom: 15px; font-size: 14px; }
+        .checklist-box label { display: block; margin-bottom: 5px; cursor: pointer; }
+        .checklist-box input[type="checkbox"] { margin-right: 8px; cursor: pointer; transform: scale(1.2); }
+        .checklist-box input[type="checkbox"]:checked + span { text-decoration: line-through; color: #9ca3af; }
+
+        /* 마법 버튼 (디테일 추가) */
+        .magic-buttons { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
+        .magic-btn { flex: 1; min-width: 130px; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; background-color: #e0e7ff; color: #4338ca; transition: 0.2s; }
+        .magic-btn:hover { background-color: #c7d2fe; }
+        #magic-loading { display: none; text-align: center; font-size: 13px; color: #4338ca; margin-top: 10px; }
+        #magic-result { display: none; background-color: #e0e7ff; padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 14px; line-height: 1.5; border: 1px solid #c7d2fe; }
+
         .links-box { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .link-btn { display: inline-block; padding: 12px; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
         
         .youtube-btn { background-color: #ef4444; }
         .google-web-btn { background-color: #3b82f6; } 
         .google-img-btn { background-color: #10b981; } 
+        .save-btn { background-color: #fbbf24; color: #854d0e; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        .save-btn:hover { background-color: #f59e0b; }
     </style>
 </head>
 <body>
@@ -38,6 +63,14 @@
 <div class="container">
     <h1>🧚 퇴근요정 쌤봇</h1>
     <p class="subtitle">10초 만에 끝내는 차시별 수업 아이디어 & 자료 검색</p>
+
+    <div class="archive-section">
+        <div class="archive-header" onclick="toggleArchive()">
+            📌 내 수업 창고 (저장된 수업 보기) <span>▼</span>
+        </div>
+        <div class="archive-list" id="archive-list">
+            </div>
+    </div>
 
     <div class="api-setup" id="api-setup-box">
         <strong>🔑 준비물: Google Gemini API 키</strong><br>
@@ -62,21 +95,40 @@
     <div id="loading">AI와 교사가 함께 멋진 수업을 만들어나가는 중... ⏳</div>
 
     <div id="result-section">
-        <h3 style="color:#16a34a;">📝 오늘의 수업 제안 & 알림장</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="color:#16a34a; margin:0;">📝 오늘의 수업 제안</h3>
+            <button class="save-btn" onclick="saveCurrentLesson()">💾 이 수업 저장하기</button>
+        </div>
+        
+        <div class="checklist-box" id="prep-checklist"></div>
+
         <div class="ai-plan" id="ai-content"></div>
+
+        <h3 style="color:#4338ca; margin-top:30px;">✨ 쌤봇 디테일 마법 (클릭!)</h3>
+        <div class="magic-buttons">
+            <button class="magic-btn" onclick="runMagic('평어')">📝 나이스 평어 뽑기</button>
+            <button class="magic-btn" onclick="runMagic('놀이변경')">🎲 다른 놀이로 변경</button>
+            <button class="magic-btn" onclick="runMagic('퀴즈')">🖨️ 형성평가 퀴즈 생성</button>
+        </div>
+        <div id="magic-loading">마법을 부리는 중... 🪄</div>
+        <div id="magic-result"></div>
+
         <h3 style="color:#16a34a; margin-top:30px;">🎯 맞춤형 자료 바로 찾기</h3>
-        <p style="font-size:13px; color:#666; margin-top:-5px;">(AI가 추천한 활동에 맞춰 최적화된 검색어입니다)</p>
         <div class="links-box" id="dynamic-links"></div>
     </div>
 </div>
 
 <script>
+    // 현재 화면에 떠있는 수업 데이터를 임시 저장할 변수
+    let currentLessonData = null;
+
     window.onload = function() {
         const savedKey = localStorage.getItem('geminiApiKey');
         if (savedKey) {
             document.getElementById('api-key').value = savedKey;
             document.getElementById('api-setup-box').style.display = 'none';
         }
+        renderArchive(); // 로딩 시 저장된 창고 목록 불러오기
     };
 
     function saveApiKey() {
@@ -88,6 +140,7 @@
         }
     }
 
+    // ★ 1. 메인 수업 생성 로직 ★
     async function generateLesson() {
         const apiKey = (localStorage.getItem('geminiApiKey') || document.getElementById('api-key').value).trim();
         const grade = document.getElementById('grade').value;
@@ -95,88 +148,197 @@
         const topic = document.getElementById('topic').value.trim();
 
         if (!apiKey) { alert("API 키를 먼저 입력해주세요!"); return; }
-        if (!subject) { alert("과목을 입력해주세요! (예: 도덕, 영어)"); return; }
-        if (!topic) { alert("오늘의 핵심 목표를 입력해주세요!"); return; }
+        if (!subject || !topic) { alert("과목과 목표를 모두 적어주세요!"); return; }
 
         document.getElementById('result-section').style.display = 'none';
+        document.getElementById('magic-result').style.display = 'none'; // 마법결과 초기화
         document.getElementById('loading').style.display = 'block';
 
-        // ★ 프롬프트 대폭 수정: AI에게 양식을 강제하고 검색어를 직접 뽑게 함 ★
-        const prompt = `당신은 탁월한 초등학교 교사입니다. 아래 대상과 목표를 바탕으로 40분 분량의 수업 계획을 짜고, 그 수업 활동에 정확히 맞아떨어지는 검색어 3개를 추출해 주세요.
+        // 프롬프트에 [준비물] 태그 추가
+        const prompt = `당신은 탁월한 초등학교 교사입니다. 아래 대상과 목표를 바탕으로 40분 분량의 수업 계획을 짜주세요.
 
         [조건]
-        1. 수업은 학생 참여형(놀이, 퀴즈, 조작 등) 위주로 [도입], [전개], [정리]로 명확히 나눌 것.
-        2. 마지막에 **[학부모 알림장 추천 문구]**를 포함할 것 (구체적 활동 묘사 대신 교육적 의미와 가정 연계 대화 위주).
-        3. 아래의 양식을 반드시 엄격하게 지켜서 답변할 것. (대괄호 태그를 꼭 쓸 것)
+        1. 수업은 학생 참여형 위주로 [도입], [전개], [정리]로 명확히 나눌 것.
+        2. 마지막에 [학부모 알림장 추천 문구] 포함할 것.
+        3. 아래 양식을 반드시 엄격하게 지켜서 답변할 것. (대괄호 태그 필수)
 
+        [준비물]
+        (교사 및 학생 준비물을 '-' 기호로 나열. 없으면 '- 특별한 준비물 없음' 작성)
         [수업계획]
-        (여기에 수업 계획과 알림장 내용 작성. "선생님~" 하는 다정한 말투 사용)
+        (여기에 다정한 말투로 수업 계획과 알림장 작성)
         [유튜브검색어]
-        (위 수업의 동기유발에 보여주기 딱 좋은 구체적인 유튜브 검색어 딱 1개. 예: 초등 1학년 학교 탐방 애니메이션)
+        (동기유발용 구체적 유튜브 검색어 딱 1개)
         [구글검색어]
-        (위 수업의 전개 활동에 필요한 학습지나 PPT를 찾기 좋은 구체적인 구글 웹 검색어 딱 1개. 예: 학교 시설 빙고 도안 ppt)
+        (학습지/활동지용 구글 웹 검색어 딱 1개)
         [이미지검색어]
-        (위 수업에 필요한 시각 자료를 찾기 좋은 구체적인 구글 이미지 검색어 딱 1개. 예: 귀여운 학교 지도 일러스트)
+        (시각자료/도안용 구글 이미지 검색어 딱 1개)
 
         대상: ${grade} ${subject}, 학습목표: ${topic}`;
 
         try {
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
             });
-
             const data = await response.json();
-            
-            if(data.error) {
-                alert("구글 서버 에러:\n" + data.error.message);
-                document.getElementById('loading').style.display = 'none';
-                return;
-            }
+            if(data.error) { throw new Error(data.error.message); }
 
             const fullText = data.candidates[0].content.parts[0].text;
+            
+            // 정규식을 이용해 안전하게 데이터 분리
+            const prepMatch = fullText.match(/\[준비물\]([\s\S]*?)\[수업계획\]/);
+            const planMatch = fullText.match(/\[수업계획\]([\s\S]*?)\[유튜브검색어\]/);
+            const ytMatch = fullText.match(/\[유튜브검색어\]([\s\S]*?)\[구글검색어\]/);
+            const webMatch = fullText.match(/\[구글검색어\]([\s\S]*?)\[이미지검색어\]/);
+            const imgMatch = fullText.match(/\[이미지검색어\]([\s\S]*)/);
 
-            // ★ AI가 보내준 텍스트를 쪼개서(파싱) 내용과 검색어를 분리하는 마법 ★
-            let lessonPlan = fullText;
-            let ytQuery = `초등 ${topic} 동기유발`;
-            let webQuery = `${grade} ${subject} ${topic} 활동지`;
-            let imgQuery = `초등 ${topic} 시각자료`;
+            let prepText = prepMatch ? prepMatch[1].trim() : "- 준비물 없음";
+            let lessonPlan = planMatch ? planMatch[1].trim() : fullText;
+            let ytQuery = ytMatch ? ytMatch[1].trim() : `초등 ${topic}`;
+            let webQuery = webMatch ? webMatch[1].trim() : `${grade} ${subject} ${topic} 활동지`;
+            let imgQuery = imgMatch ? imgMatch[1].trim() : `초등 ${topic} 시각자료`;
 
-            if(fullText.includes('[유튜브검색어]')) {
-                const parts = fullText.split('[유튜브검색어]');
-                lessonPlan = parts[0].replace('[수업계획]', '').trim();
-                
-                const remaining1 = parts[1];
-                if(remaining1.includes('[구글검색어]')) {
-                    const parts2 = remaining1.split('[구글검색어]');
-                    ytQuery = parts2[0].trim();
-                    
-                    const remaining2 = parts2[1];
-                    if(remaining2.includes('[이미지검색어]')) {
-                        const parts3 = remaining2.split('[이미지검색어]');
-                        webQuery = parts3[0].trim();
-                        imgQuery = parts3[1].trim();
-                    }
-                }
-            }
+            // 체크리스트 생성 로직
+            const prepItems = prepText.split('\n').filter(item => item.trim() !== '');
+            let checklistHTML = `<strong>☑️ 오늘 챙겨야 할 준비물</strong><br><br>`;
+            prepItems.forEach((item, index) => {
+                let cleanItem = item.replace(/^-/, '').trim();
+                checklistHTML += `<label><input type="checkbox" id="chk${index}"> <span>${cleanItem}</span></label>`;
+            });
+            document.getElementById('prep-checklist').innerHTML = checklistHTML;
 
+            // 수업 계획 출력
             document.getElementById('ai-content').innerHTML = lessonPlan.replace(/\n/g, '<br>');
 
+            // 버튼 출력
             document.getElementById('dynamic-links').innerHTML = `
-                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브 검색: "${ytQuery}"</a>
-                <a href="https://www.google.com/search?q=${encodeURIComponent(webQuery)}" target="_blank" class="link-btn google-web-btn">🔍 구글 웹 검색: "${webQuery}"</a>
-                <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}" target="_blank" class="link-btn google-img-btn">🖼️ 이미지 검색: "${imgQuery}"</a>
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(ytQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브: "${ytQuery}"</a>
+                <a href="https://www.google.com/search?q=${encodeURIComponent(webQuery)}" target="_blank" class="link-btn google-web-btn">🔍 활동지: "${webQuery}"</a>
+                <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imgQuery)}" target="_blank" class="link-btn google-img-btn">🖼️ 시각자료: "${imgQuery}"</a>
             `;
+
+            // 현재 수업 정보 메모리 저장 (마법 버튼 및 아카이브용)
+            currentLessonData = {
+                title: `${grade} ${subject} - ${topic}`,
+                plan: lessonPlan
+            };
 
             document.getElementById('loading').style.display = 'none';
             document.getElementById('result-section').style.display = 'block';
 
         } catch (error) {
-            alert("통신 오류 발생:\n" + error.message);
+            alert("오류 발생:\n" + error.message);
             document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    // ★ 2. 마법 버튼 (디테일 추가) 로직 ★
+    async function runMagic(type) {
+        if (!currentLessonData) return;
+        const apiKey = localStorage.getItem('geminiApiKey');
+        
+        let magicPrompt = "";
+        if (type === '평어') {
+            magicPrompt = `다음 수업 내용을 바탕으로 나이스(NEIS) 교과학습발달상황에 복사해 넣을 수 있는 평가 기록(평어)을 '상, 중, 하' 3단계로 나누어 각각 1문장씩 작성해 줘.\n\n[수업내용]\n${currentLessonData.plan}`;
+        } else if (type === '놀이변경') {
+            magicPrompt = `다음 수업 내용 중 '전개(핵심활동)' 부분의 활동을 완전히 다른 새로운 놀이형 활동으로 1개 제안해 줘. 준비물이 적게 드는 활동이면 좋아.\n\n[수업내용]\n${currentLessonData.plan}`;
+        } else if (type === '퀴즈') {
+            magicPrompt = `다음 수업 내용을 바탕으로, 수업 마지막에 아이들에게 형성평가용으로 낼 수 있는 O/X 퀴즈 2문제와 짧은 단답형 주관식 1문제를 정답과 함께 만들어 줘.\n\n[수업내용]\n${currentLessonData.plan}`;
+        }
+
+        document.getElementById('magic-loading').style.display = 'block';
+        document.getElementById('magic-result').style.display = 'none';
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: magicPrompt }] }] })
+            });
+            const data = await response.json();
+            const magicText = data.candidates[0].content.parts[0].text;
+            
+            document.getElementById('magic-result').innerHTML = `<strong>✨ 마법 결과:</strong><br><br>` + magicText.replace(/\n/g, '<br>');
+            document.getElementById('magic-loading').style.display = 'none';
+            document.getElementById('magic-result').style.display = 'block';
+        } catch (error) {
+            alert("마법 실패: " + error.message);
+            document.getElementById('magic-loading').style.display = 'none';
+        }
+    }
+
+    // ★ 3. 수업 창고 (아카이브) 로직 ★
+    function toggleArchive() {
+        const list = document.getElementById('archive-list');
+        list.style.display = list.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function saveCurrentLesson() {
+        if (!currentLessonData) return;
+        let archive = JSON.parse(localStorage.getItem('lessonArchive') || '[]');
+        
+        // 날짜 추가
+        const today = new Date();
+        const dateStr = `${today.getMonth()+1}/${today.getDate()}`;
+        
+        archive.push({
+            date: dateStr,
+            title: currentLessonData.title,
+            plan: currentLessonData.plan
+        });
+        
+        localStorage.setItem('lessonArchive', JSON.stringify(archive));
+        alert('내 창고에 안전하게 저장되었습니다! 📌');
+        renderArchive();
+    }
+
+    function renderArchive() {
+        let archive = JSON.parse(localStorage.getItem('lessonArchive') || '[]');
+        const listDiv = document.getElementById('archive-list');
+        listDiv.innerHTML = '';
+
+        if(archive.length === 0) {
+            listDiv.innerHTML = '<span style="color:#999; font-size:12px;">아직 저장된 수업이 없습니다.</span>';
+            return;
+        }
+
+        // 최신순으로 보여주기
+        archive.reverse().forEach((item, idx) => {
+            // 실제 인덱스는 역순이므로 다시 계산
+            const realIndex = archive.length - 1 - idx; 
+            const div = document.createElement('div');
+            div.className = 'archive-item';
+            div.innerHTML = `
+                <div><strong style="color:#d97706;">[${item.date}]</strong> ${item.title}</div>
+                <div>
+                    <button style="background:#3b82f6;" onclick="loadLesson(${realIndex})">불러오기</button>
+                    <button onclick="deleteLesson(${realIndex})">삭제</button>
+                </div>
+            `;
+            listDiv.appendChild(div);
+        });
+    }
+
+    function loadLesson(index) {
+        let archive = JSON.parse(localStorage.getItem('lessonArchive') || '[]');
+        const item = archive[index];
+        if(!item) return;
+
+        // 화면에 뿌려주기
+        document.getElementById('prep-checklist').innerHTML = '<em>저장된 수업을 불러왔습니다. (준비물/마법은 새로고침 후 다시 생성 가능)</em>';
+        document.getElementById('ai-content').innerHTML = item.plan.replace(/\n/g, '<br>');
+        document.getElementById('dynamic-links').innerHTML = ''; // 이전 검색버튼 숨김
+        document.getElementById('magic-result').style.display = 'none';
+        
+        document.getElementById('result-section').style.display = 'block';
+        alert(`[${item.title}] 수업을 불러왔습니다!`);
+    }
+
+    function deleteLesson(index) {
+        if(confirm("이 수업 기록을 삭제하시겠습니까?")) {
+            let archive = JSON.parse(localStorage.getItem('lessonArchive') || '[]');
+            archive.splice(index, 1);
+            localStorage.setItem('lessonArchive', JSON.stringify(archive));
+            renderArchive();
         }
     }
 </script>
