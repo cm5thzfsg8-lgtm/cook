@@ -3,209 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우리아이 냉파 마스터</title>
+    <title>퇴근요정 쌤봇 - 맞춤형 수업 비서</title>
     <style>
         body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background-color: #fcf9f2; /* 따뜻한 아이보리 배경 */
+            font-family: 'Pretendard', -apple-system, system-ui, sans-serif;
+            background-color: #f0fdf4; /* 편안한 민트색 배경 */
             color: #333;
             margin: 0;
-            padding: 0;
             display: flex;
             justify-content: center;
         }
         .container {
             width: 100%;
-            max-width: 480px; /* 모바일 화면에 맞춤 */
+            max-width: 500px;
             background-color: #fff;
             min-height: 100vh;
             padding: 20px;
             box-sizing: border-box;
             box-shadow: 0 0 15px rgba(0,0,0,0.05);
         }
-        h1 {
-            color: #ff9800;
-            font-size: 24px;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-        p.subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        input[type="text"] {
+        h1 { color: #16a34a; text-align: center; font-size: 24px; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+        
+        /* API 설정창 디자인 */
+        .api-setup {
+            background-color: #f1f5f9;
             padding: 15px;
-            font-size: 16px;
-            border: 2px solid #ffe0b2;
-            border-radius: 12px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input[type="text"]:focus {
-            border-color: #ff9800;
-        }
-        .quick-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+            border-radius: 10px;
             margin-bottom: 20px;
-        }
-        .tag {
-            background-color: #fff3e0;
-            color: #ef6c00;
-            padding: 8px 12px;
-            border-radius: 20px;
             font-size: 13px;
-            cursor: pointer;
-            border: 1px solid #ffe0b2;
         }
-        .tag:hover {
-            background-color: #ffe0b2;
+        .api-setup input {
+            width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box;
+            border: 1px solid #cbd5e1; border-radius: 6px;
         }
+        
+        /* 입력창 디자인 */
+        .input-group { display: flex; flex-direction: column; gap: 12px; }
+        .row { display: flex; gap: 10px; }
+        input[type="text"], select {
+            padding: 12px; font-size: 15px; border: 2px solid #bbf7d0;
+            border-radius: 8px; outline: none; width: 100%; box-sizing: border-box;
+        }
+        input[type="text"]:focus, select:focus { border-color: #22c55e; }
+        
         button.submit-btn {
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            padding: 16px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            transition: background-color 0.2s;
+            background-color: #22c55e; color: white; border: none; padding: 15px;
+            font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer;
+            margin-top: 10px; transition: 0.2s;
         }
-        button.submit-btn:hover {
-            background-color: #f57c00;
+        button.submit-btn:hover { background-color: #16a34a; }
+        
+        /* 결과창 디자인 */
+        #loading { display: none; text-align: center; color: #16a34a; font-weight: bold; margin-top: 20px; }
+        #result-section { display: none; margin-top: 25px; }
+        .ai-plan {
+            background-color: #f8fafc; padding: 20px; border-radius: 10px;
+            border: 1px solid #e2e8f0; line-height: 1.6; font-size: 15px;
         }
-        #result-section {
-            margin-top: 30px;
-            display: none; /* 처음엔 숨겨둠 */
-            background-color: #fff9c4;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px dashed #fbc02d;
+        
+        /* 다이렉트 링크 버튼 */
+        .links-box {
+            margin-top: 20px; display: flex; flex-direction: column; gap: 10px;
         }
-        .recipe-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #e65100;
-            margin-bottom: 10px;
+        .link-btn {
+            display: inline-block; padding: 12px; text-align: center;
+            border-radius: 8px; text-decoration: none; font-weight: bold; color: white;
         }
-        .recipe-step {
-            font-size: 15px;
-            line-height: 1.6;
-            margin-bottom: 8px;
-        }
-        .loading {
-            text-align: center;
-            color: #ff9800;
-            font-weight: bold;
-            display: none;
-            margin-top: 20px;
-        }
+        .youtube-btn { background-color: #ef4444; }
+        .google-btn { background-color: #4285f4; }
+        .pinterest-btn { background-color: #bd081c; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🍳 우리아이 냉파 마스터</h1>
-    <p class="subtitle">집에 있는 재료로 15분 완성 아이 반찬 찾기!</p>
+    <h1>🧚 퇴근요정 쌤봇</h1>
+    <p class="subtitle">10초 만에 끝내는 차시별 수업 아이디어 & 자료 검색</p>
+
+    <div class="api-setup" id="api-setup-box">
+        <strong>🔑 준비물: Google Gemini API 키</strong><br>
+        <span style="color:#64748b;">API 키를 입력해야 AI가 작동합니다. (브라우저에 안전하게 저장됩니다)</span>
+        <input type="password" id="api-key" placeholder="AIzaSy... 로 시작하는 키를 붙여넣으세요">
+        <button onclick="saveApiKey()" style="margin-top:8px; padding:5px 10px; cursor:pointer;">키 저장하기</button>
+    </div>
 
     <div class="input-group">
-        <input type="text" id="ingredient-input" placeholder="예: 계란, 두부, 양파 (쉼표로 구분)">
-        
-        <div class="quick-tags">
-            <span class="tag" onclick="addTag('계란')">+ 계란</span>
-            <span class="tag" onclick="addTag('두부')">+ 두부</span>
-            <span class="tag" onclick="addTag('참치')">+ 참치</span>
-            <span class="tag" onclick="addTag('양파')">+ 양파</span>
-            <span class="tag" onclick="addTag('당근')">+ 당근</span>
-            <span class="tag" onclick="addTag('베이컨')">+ 베이컨</span>
+        <div class="row">
+            <select id="grade">
+                <option value="초등 1학년">1학년</option><option value="초등 2학년">2학년</option>
+                <option value="초등 3학년">3학년</option><option value="초등 4학년">4학년</option>
+                <option value="초등 5학년">5학년</option><option value="초등 6학년">6학년</option>
+            </select>
+            <select id="subject">
+                <option value="수학">수학</option><option value="국어">국어</option>
+                <option value="사회">사회</option><option value="과학">과학</option>
+                <option value="통합교과">통합교과</option>
+            </select>
         </div>
-
-        <button class="submit-btn" onclick="generateRecipe()">레시피 추천받기</button>
+        <input type="text" id="topic" placeholder="오늘의 핵심 목표 (예: 10을 만들어 더하기)">
+        <button class="submit-btn" onclick="generateLesson()">수업 비서 호출하기 🚀</button>
     </div>
 
-    <div id="loading" class="loading">
-        AI가 아이 입맛에 딱 맞는 레시피를 고민 중이에요...🤔
-    </div>
+    <div id="loading">AI가 17년 차 교사의 노하우를 바탕으로 수업을 구조화하는 중... ⏳</div>
 
     <div id="result-section">
-        <div class="recipe-title" id="recipe-name"></div>
-        <div id="recipe-content"></div>
+        <h3 style="color:#16a34a;">📝 오늘의 수업 구조 제안</h3>
+        <div class="ai-plan" id="ai-content"></div>
+
+        <h3 style="color:#16a34a; margin-top:30px;">🎯 다이렉트 자료 검색</h3>
+        <p style="font-size:13px; color:#666;">버튼을 누르면 가장 정확한 검색결과 창으로 바로 이동합니다.</p>
+        <div class="links-box" id="dynamic-links">
+            </div>
     </div>
 </div>
 
 <script>
-    // 태그를 누르면 입력창에 재료가 추가되는 기능
-    function addTag(item) {
-        const inputField = document.getElementById('ingredient-input');
-        if (inputField.value === '') {
-            inputField.value = item;
-        } else {
-            // 이미 재료가 있으면 쉼표를 붙여서 추가
-            if (!inputField.value.includes(item)) {
-                inputField.value += ', ' + item;
-            }
+    // 페이지 열릴 때 저장된 API 키가 있는지 확인
+    window.onload = function() {
+        const savedKey = localStorage.getItem('geminiApiKey');
+        if (savedKey) {
+            document.getElementById('api-key').value = savedKey;
+            document.getElementById('api-setup-box').style.opacity = '0.5'; // 저장되어 있으면 살짝 흐리게
+        }
+    };
+
+    function saveApiKey() {
+        const key = document.getElementById('api-key').value;
+        if(key) {
+            localStorage.setItem('geminiApiKey', key);
+            alert('API 키가 브라우저에 저장되었습니다! 이제 마음껏 사용하세요.');
+            document.getElementById('api-setup-box').style.opacity = '0.5';
         }
     }
 
-    // 레시피 생성 기능 (프로토타입 가짜 AI 로직)
-    function generateRecipe() {
-        const input = document.getElementById('ingredient-input').value;
-        const resultSection = document.getElementById('result-section');
-        const loading = document.getElementById('loading');
-        const recipeName = document.getElementById('recipe-name');
-        const recipeContent = document.getElementById('recipe-content');
+    // 진짜 AI 호출 함수
+    async function generateLesson() {
+        const apiKey = localStorage.getItem('geminiApiKey') || document.getElementById('api-key').value;
+        const grade = document.getElementById('grade').value;
+        const subject = document.getElementById('subject').value;
+        const topic = document.getElementById('topic').value;
 
-        if (input.trim() === '') {
-            alert('냉장고에 있는 재료를 하나라도 적어주세요!');
-            return;
-        }
+        if (!apiKey) { alert("API 키를 먼저 입력하고 저장해주세요!"); return; }
+        if (!topic.trim()) { alert("오늘의 핵심 목표를 입력해주세요!"); return; }
 
-        // 결과창 숨기고 로딩 보여주기
-        resultSection.style.display = 'none';
-        loading.style.display = 'block';
+        document.getElementById('result-section').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
 
-        // 진짜 AI가 생각하는 것처럼 1.5초(1500ms) 기다렸다가 결과 보여주기
-        setTimeout(() => {
-            loading.style.display = 'none';
-            resultSection.style.display = 'block';
+        // AI에게 내릴 강력한 프롬프트 (명령어)
+        const prompt = `당신은 17년 차 베테랑 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획을 짜주세요.
+        조건 1: 너무 뻔한 설명식 수업이 아닌, 학생 참여형(조작, 놀이 등) 위주로 제안할 것.
+        조건 2: [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
+        조건 3: 말투는 후배 교사에게 조언하듯 친절하게, 분량은 너무 길지 않게 핵심만 작성할 것.
+        대상: ${grade} ${subject}, 학습목표: ${topic}`;
 
-            // 입력된 키워드에 따라 다른 레시피를 보여주는 프로토타입 로직
-            if (input.includes('두부')) {
-                recipeName.innerText = "단짠단짠 깍둑 두부강정 🍱";
-                recipeContent.innerHTML = `
-                    <div class="recipe-step">1. 두부를 깍둑 썰어 키친타월로 물기를 빼고 전분가루를 살짝 묻혀주세요.</div>
-                    <div class="recipe-step">2. 프라이팬에 기름을 넉넉히 두르고 두부를 노릇노릇하게 구워줍니다.</div>
-                    <div class="recipe-step">3. 간장 1스푼, 올리고당 1.5스푼, 케첩 0.5스푼을 섞어 소스를 만들어요.</div>
-                    <div class="recipe-step">4. 구운 두부에 소스를 붓고 약불에서 빠르게 버무리면 끝! 아이들이 정말 잘 먹어요.</div>
-                `;
-            } else if (input.includes('참치')) {
-                recipeName.innerText = "야채 쏙쏙 참치 동그랑땡 🐟";
-                recipeContent.innerHTML = `
-                    <div class="recipe-step">1. 참치캔의 기름을 쫙 빼서 볼에 담아주세요.</div>
-                    <div class="recipe-step">2. 냉장고에 있는 야채(양파, 당근 등)를 아주 잘게 다져서 넣어주세요. (편식 방지용!)</div>
-                    <div class="recipe-step">3. 계란 1개와 부침가루 2스푼을 넣고 잘 섞어 반죽을 만듭니다.</div>
-                    <div class="recipe-step">4. 프라이팬에 한 숟가락씩 동그랗게 올려 노릇하게 부쳐주면 완성!</div>
-                `;
-            } else {
-                recipeName.innerText = "초간단 마법의 스크램블 덮밥 🍳";
-                recipeContent.innerHTML = `
-                    <div class="recipe-step">1. 계란 2개를 풀고 우유를 2스푼 넣어 부드럽게 섞어주세요.</div>
-                    <div class="recipe-step">2. 프라이팬에 버터나 기름을 두르고 스크램블을 만들어 밥 위에 올려줍니다.</div>
-                    <div class="recipe-step">3. 남은 재료(${input})를 잘게 썰어 간장 1스푼, 참기름 0.5스푼과 함께 살짝 볶아주세요.</div>
-                    <div class="recipe-step">4. 계란 위에 볶은 재료를 올리고 김가루를 솔솔 뿌리면 밥도둑 완성!</div>
-                `;
+        try {
+            // 구글 Gemini API 통신
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if(data.error) {
+                alert("오류가 발생했습니다. API 키가 정확한지 확인해주세요!");
+                document.getElementById('loading').style.display = 'none';
+                return;
             }
-        }, 1500); // 1.5초 대기
+
+            // AI 대답 화면에 뿌리기 (마크다운 엔터를 HTML 줄바꿈으로 변경)
+            const aiText = data.candidates[0].content.parts[0].text;
+            document.getElementById('ai-content').innerHTML = aiText.replace(/\n/g, '<br>');
+
+            // 다이렉트 검색 링크 자동 생성
+            const searchQuery = `${grade} ${subject} ${topic}`;
+            document.getElementById('dynamic-links').innerHTML = `
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery + ' 수업 놀이')}" target="_blank" class="link-btn youtube-btn">
+                    ▶️ 유튜브 영상 및 놀이 찾기
+                </a>
+                <a href="https://www.google.com/search?q=${encodeURIComponent('site:indischool.com ' + searchQuery + ' PPT')}" target="_blank" class="link-btn google-btn">
+                    🏫 인디스쿨 PPT/학습지 검색 (구글링)
+                </a>
+                <a href="https://www.pinterest.co.kr/search/pins/?q=${encodeURIComponent(subject + ' ' + topic + ' activity')}" target="_blank" class="link-btn pinterest-btn">
+                    📌 핀터레스트 시각자료/교구 찾기
+                </a>
+            `;
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+
+        } catch (error) {
+            alert("네트워크 통신 중 문제가 발생했습니다.");
+            document.getElementById('loading').style.display = 'none';
+        }
     }
 </script>
 
