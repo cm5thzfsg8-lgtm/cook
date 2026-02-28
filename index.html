@@ -23,10 +23,9 @@
         .links-box { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .link-btn { display: inline-block; padding: 12px; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
         
-        /* 버튼 색상 깔끔하게 변경 */
         .youtube-btn { background-color: #ef4444; }
-        .google-web-btn { background-color: #3b82f6; } /* 구글 검색은 파란색 */
-        .google-img-btn { background-color: #10b981; } /* 이미지 검색은 초록색 */
+        .google-web-btn { background-color: #3b82f6; } 
+        .google-img-btn { background-color: #10b981; } 
     </style>
 </head>
 <body>
@@ -63,7 +62,7 @@
     <div id="loading">AI와 교사가 함께 멋진 수업을 만들어나가는 중... ⏳</div>
 
     <div id="result-section">
-        <h3 style="color:#16a34a;">📝 오늘의 수업 구조 제안</h3>
+        <h3 style="color:#16a34a;">📝 오늘의 수업 제안 & 알림장</h3>
         <div class="ai-plan" id="ai-content"></div>
         <h3 style="color:#16a34a; margin-top:30px;">🎯 맞춤형 자료 바로 찾기</h3>
         <div class="links-box" id="dynamic-links"></div>
@@ -100,10 +99,12 @@
         document.getElementById('result-section').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
-        const prompt = `당신은 탁월한 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획을 짜주세요.
-        조건 1: 너무 뻔한 설명식 수업이 아닌, 학생 참여형(조작, 놀이 등) 위주로 제안할 것.
-        조건 2: [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
-        조건 3: 사용자를 "선생님"이라고 부르며 존중하고, "선생님, 이런 활동으로 구성해 보는 건 어떨까요?"처럼 다정하고 부드럽게 제안하는 말투를 사용할 것.
+        // ★ 프롬프트에 '알림장' 관련 특별 조건(조건 3)이 추가되었습니다! ★
+        const prompt = `당신은 탁월한 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획과 학부모 알림장 문구를 작성해 주세요.
+        조건 1: 수업은 너무 뻔한 설명식 수업이 아닌, 학생 참여형 위주로 제안할 것.
+        조건 2: 수업 흐름은 [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
+        조건 3: 수업 계획 마지막에 **[학부모 알림장 추천 문구]**를 반드시 포함할 것. 단, 교사가 수업 활동을 자유롭게 변형할 수 있으므로 구체적인 활동 묘사는 피하고, '오늘 배운 내용의 교육적 의미'와 '가정에서 부모님이 어떻게 연계하여 대화하거나 지도해주시면 좋을지'에 초점을 맞춰 학부모님께 보내는 다정한 톤으로 작성할 것.
+        조건 4: 사용자를 "선생님"이라고 부르며 존중하고, 부드럽게 제안하는 말투를 사용할 것.
         대상: ${grade} ${subject}, 학습목표: ${topic}`;
 
         try {
@@ -126,7 +127,6 @@
             const aiText = data.candidates[0].content.parts[0].text;
             document.getElementById('ai-content').innerHTML = aiText.replace(/\n/g, '<br>');
 
-            // ★ 네이버 빼고 구글 검색으로 변경 ★
             const youtubeQuery = `초등 ${topic}`;
             const googleWebQuery = `${grade} ${subject} ${topic} 수업 활동지 OR 학습지`;
             const imageQuery = `초등 ${topic} 도안 OR 시각자료`;
