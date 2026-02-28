@@ -13,8 +13,14 @@
         .api-setup input { width: 100%; padding: 8px; margin-top: 8px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; }
         .input-group { display: flex; flex-direction: column; gap: 12px; }
         .row { display: flex; gap: 10px; }
-        input[type="text"], select { padding: 12px; font-size: 15px; border: 2px solid #bbf7d0; border-radius: 8px; outline: none; width: 100%; box-sizing: border-box; }
+        input[type="text"], select { padding: 12px; font-size: 15px; border: 2px solid #bbf7d0; border-radius: 8px; outline: none; box-sizing: border-box; }
         input[type="text"]:focus, select:focus { border-color: #22c55e; }
+        
+        /* 학년 선택과 과목 입력창 비율 조정 */
+        #grade { width: 40%; }
+        #subject { width: 60%; }
+        #topic { width: 100%; }
+
         button.submit-btn { background-color: #22c55e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         button.submit-btn:hover { background-color: #16a34a; }
         #loading { display: none; text-align: center; color: #16a34a; font-weight: bold; margin-top: 20px; }
@@ -48,12 +54,7 @@
                 <option value="초등 3학년">3학년</option><option value="초등 4학년">4학년</option>
                 <option value="초등 5학년">5학년</option><option value="초등 6학년">6학년</option>
             </select>
-            <select id="subject">
-                <option value="수학">수학</option><option value="국어">국어</option>
-                <option value="사회">사회</option><option value="과학">과학</option>
-                <option value="통합교과">통합교과</option>
-                <option value="창체">창의적체험활동</option>
-            </select>
+            <input type="text" id="subject" placeholder="과목 (예: 영어, 미술, 실과)">
         </div>
         <input type="text" id="topic" placeholder="오늘의 핵심 목표 (예: 학교 시설 탐방)">
         <button class="submit-btn" onclick="generateLesson()">수업 비서 호출하기 🚀</button>
@@ -90,16 +91,17 @@
     async function generateLesson() {
         const apiKey = (localStorage.getItem('geminiApiKey') || document.getElementById('api-key').value).trim();
         const grade = document.getElementById('grade').value;
-        const subject = document.getElementById('subject').value;
-        const topic = document.getElementById('topic').value;
+        const subject = document.getElementById('subject').value.trim(); // 띄어쓰기 방지
+        const topic = document.getElementById('topic').value.trim();
 
         if (!apiKey) { alert("API 키를 먼저 입력해주세요!"); return; }
-        if (!topic.trim()) { alert("오늘의 핵심 목표를 입력해주세요!"); return; }
+        // 과목과 주제 중 하나라도 안 적으면 알려주기
+        if (!subject) { alert("과목을 입력해주세요! (예: 도덕, 영어)"); return; }
+        if (!topic) { alert("오늘의 핵심 목표를 입력해주세요!"); return; }
 
         document.getElementById('result-section').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
-        // ★ 프롬프트에 '알림장' 관련 특별 조건(조건 3)이 추가되었습니다! ★
         const prompt = `당신은 탁월한 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획과 학부모 알림장 문구를 작성해 주세요.
         조건 1: 수업은 너무 뻔한 설명식 수업이 아닌, 학생 참여형 위주로 제안할 것.
         조건 2: 수업 흐름은 [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
