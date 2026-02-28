@@ -22,8 +22,11 @@
         .ai-plan { background-color: #f8fafc; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; line-height: 1.6; font-size: 15px; }
         .links-box { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .link-btn { display: inline-block; padding: 12px; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
+        
+        /* 버튼 색상 변경 */
         .youtube-btn { background-color: #ef4444; }
-        .pinterest-btn { background-color: #bd081c; }
+        .naver-btn { background-color: #03c75a; }
+        .google-btn { background-color: #4285f4; }
     </style>
 </head>
 <body>
@@ -34,7 +37,7 @@
 
     <div class="api-setup" id="api-setup-box">
         <strong>🔑 준비물: Google Gemini API 키</strong><br>
-        <span style="color:#64748b;">(카드 연동이 완료된 계정의 키여야 합니다!)</span>
+        <span style="color:#64748b;">(브라우저에 안전하게 저장됩니다)</span>
         <input type="password" id="api-key" placeholder="AIzaSy... 로 시작하는 키를 붙여넣으세요">
         <button onclick="saveApiKey()" style="margin-top:8px; padding:5px 10px; cursor:pointer;">키 저장하기</button>
     </div>
@@ -50,18 +53,19 @@
                 <option value="수학">수학</option><option value="국어">국어</option>
                 <option value="사회">사회</option><option value="과학">과학</option>
                 <option value="통합교과">통합교과</option>
+                <option value="창체">창의적체험활동</option>
             </select>
         </div>
-        <input type="text" id="topic" placeholder="오늘의 핵심 목표 (예: 10을 만들어 더하기)">
+        <input type="text" id="topic" placeholder="오늘의 핵심 목표 (예: 학교 시설 탐방)">
         <button class="submit-btn" onclick="generateLesson()">수업 비서 호출하기 🚀</button>
     </div>
 
-    <div id="loading">AI가 수업을 구조화하는 중... ⏳</div>
+    <div id="loading">AI가 17년 차 교사의 노하우를 바탕으로 수업을 구조화하는 중... ⏳</div>
 
     <div id="result-section">
         <h3 style="color:#16a34a;">📝 오늘의 수업 구조 제안</h3>
         <div class="ai-plan" id="ai-content"></div>
-        <h3 style="color:#16a34a; margin-top:30px;">🎯 다이렉트 자료 검색</h3>
+        <h3 style="color:#16a34a; margin-top:30px;">🎯 맞춤형 자료 바로 찾기</h3>
         <div class="links-box" id="dynamic-links"></div>
     </div>
 </div>
@@ -71,7 +75,7 @@
         const savedKey = localStorage.getItem('geminiApiKey');
         if (savedKey) {
             document.getElementById('api-key').value = savedKey;
-            document.getElementById('api-setup-box').style.opacity = '0.5';
+            document.getElementById('api-setup-box').style.display = 'none'; // 키가 있으면 입력창 아예 숨기기 (깔끔하게!)
         }
     };
 
@@ -79,9 +83,8 @@
         const key = document.getElementById('api-key').value.trim(); 
         if(key) {
             localStorage.setItem('geminiApiKey', key);
-            document.getElementById('api-key').value = key;
             alert('API 키가 안전하게 저장되었습니다!');
-            document.getElementById('api-setup-box').style.opacity = '0.5';
+            document.getElementById('api-setup-box').style.display = 'none';
         }
     }
 
@@ -97,11 +100,10 @@
         document.getElementById('result-section').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
-        // ★ AI 프롬프트 수정: 말투 개선 ★
         const prompt = `당신은 17년 차 베테랑 초등학교 교사입니다. 사용자가 입력한 정보를 바탕으로 딱 40분 분량의 실용적인 차시 수업 계획을 짜주세요.
         조건 1: 너무 뻔한 설명식 수업이 아닌, 학생 참여형(조작, 놀이 등) 위주로 제안할 것.
         조건 2: [도입(동기유발)], [전개(핵심활동)], [정리(평가 및 마무리)] 3단계로 명확히 나눌 것.
-        조건 3: 사용자를 "선생님"이라고 부르며 존중하고, "선생님, 이런 활동으로 구성해 보는 건 어떨까요?"처럼 다정하고 부드럽게 제안하는 말투를 사용할 것. "선배 교사로서" 같은 표현은 쓰지 말 것.
+        조건 3: 사용자를 "선생님"이라고 부르며 존중하고, "선생님, 이런 활동으로 구성해 보는 건 어떨까요?"처럼 다정하고 부드럽게 제안하는 말투를 사용할 것.
         대상: ${grade} ${subject}, 학습목표: ${topic}`;
 
         try {
@@ -124,11 +126,18 @@
             const aiText = data.candidates[0].content.parts[0].text;
             document.getElementById('ai-content').innerHTML = aiText.replace(/\n/g, '<br>');
 
-            // ★ 인디스쿨 검색 링크 삭제 ★
-            const searchQuery = `${grade} ${subject} ${topic}`;
+            // ★ 검색어 로직 고도화 ★
+            // 유튜브: 쓸데없는 말 빼고 딱 '초등 + 핵심주제'만 검색
+            const youtubeQuery = `초등 ${topic}`;
+            // 네이버: 선생님들이 올린 실제 수업 후기나 활동지 검색
+            const naverQuery = `${grade} ${subject} ${topic} 수업 OR 활동지`;
+            // 구글 이미지: 그림, 도안, 시각자료가 필요할 때
+            const imageQuery = `초등 ${topic} 도안 OR 시각자료`;
+
             document.getElementById('dynamic-links').innerHTML = `
-                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery + ' 수업 놀이')}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브 영상 및 놀이 찾기</a>
-                <a href="https://www.pinterest.co.kr/search/pins/?q=${encodeURIComponent(subject + ' ' + topic + ' activity')}" target="_blank" class="link-btn pinterest-btn">📌 핀터레스트 시각자료/교구 찾기</a>
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(youtubeQuery)}" target="_blank" class="link-btn youtube-btn">▶️ 유튜브 관련 영상 (동기유발용)</a>
+                <a href="https://search.naver.com/search.naver?query=${encodeURIComponent(naverQuery)}" target="_blank" class="link-btn naver-btn">📗 네이버 블로그 (수업 후기/학습지 찾기)</a>
+                <a href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(imageQuery)}" target="_blank" class="link-btn google-btn">🖼️ 구글 이미지 (도안/시각자료 찾기)</a>
             `;
 
             document.getElementById('loading').style.display = 'none';
