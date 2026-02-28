@@ -29,6 +29,15 @@
 
         button.submit-btn { background-color: #22c55e; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         button.submit-btn:hover { background-color: #16a34a; }
+        
+        /* ⏳ 모래시계 회전 애니메이션 */
+        @keyframes flip-hourglass {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hourglass-icon { display: inline-block; animation: flip-hourglass 2s infinite ease-in-out; }
+        
         #loading { display: none; text-align: center; color: #16a34a; font-weight: bold; margin-top: 20px; }
         #result-section { display: none; margin-top: 25px; }
         
@@ -42,8 +51,12 @@
         .magic-buttons { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
         .magic-btn { flex: 1 1 45%; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: bold; cursor: pointer; background-color: #e0e7ff; color: #4338ca; transition: 0.2s; }
         .magic-btn:hover { background-color: #c7d2fe; }
-        #magic-loading { display: none; text-align: center; font-size: 13px; color: #4338ca; margin-top: 10px; }
-        #magic-result { display: none; background-color: #e0e7ff; padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 14px; line-height: 1.5; border: 1px solid #c7d2fe; }
+        #magic-loading { display: none; text-align: center; font-size: 13px; color: #4338ca; margin-top: 10px; font-weight: bold; }
+        #magic-result { display: none; background-color: #e0e7ff; padding: 15px; border-radius: 10px; margin-top: 10px; font-size: 14px; line-height: 1.5; border: 1px solid #c7d2fe; position: relative; }
+
+        /* 📋 텍스트 복사 버튼 스타일 */
+        .copy-btn { background-color: #4b5563; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; }
+        .copy-btn:hover { background-color: #374151; }
 
         .links-box { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
         .link-btn { display: inline-block; padding: 12px; text-align: center; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; }
@@ -88,7 +101,7 @@
         <button class="submit-btn" onclick="generateLesson()">수업 비서 호출하기 🚀</button>
     </div>
 
-    <div id="loading">AI와 교사가 함께 멋진 수업을 만들어나가는 중... ⏳</div>
+    <div id="loading">AI와 교사가 함께 멋진 수업을 만들어나가는 중... <span class="hourglass-icon">⏳</span></div>
 
     <div id="result-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -106,7 +119,7 @@
             <button class="magic-btn" onclick="runMagic('놀이변경')">🎲 다른 놀이로 변경</button>
             <button class="magic-btn" onclick="runMagic('퀴즈')">🖨️ 형성평가 퀴즈 생성</button>
         </div>
-        <div id="magic-loading">마법을 부리는 중... 🪄</div>
+        <div id="magic-loading">마법을 부리는 중... <span class="hourglass-icon">⏳</span></div>
         <div id="magic-result"></div>
 
         <h3 style="color:#16a34a; margin-top:30px;">🎯 맞춤형 자료 바로 찾기</h3>
@@ -220,7 +233,6 @@
         const apiKey = localStorage.getItem('geminiApiKey');
         
         let magicPrompt = "";
-        // ★ PPT 추출 프롬프트 추가 ★
         if (type === 'PPT') {
             magicPrompt = `다음 수업 내용을 바탕으로, 교사가 수업 시간에 화면에 띄울 PPT 슬라이드의 뼈대와 대본을 구성해 줘.\n\n[조건]\n1. 슬라이드 5~7장 내외로 구성할 것.\n2. 각 슬라이드 번호마다 [화면에 띄울 텍스트/이미지 설명]과 [교사가 실제로 말할 대본]을 명확히 구분하여 작성해 줘.\n\n[수업내용]\n${currentLessonData.plan}`;
         } else if (type === '평어') {
@@ -242,13 +254,38 @@
             const data = await response.json();
             const magicText = data.candidates[0].content.parts[0].text;
             
-            document.getElementById('magic-result').innerHTML = `<strong>✨ 마법 결과:</strong><br><br>` + magicText.replace(/\n/g, '<br>');
+            // ★ 복사 버튼과 텍스트를 함께 출력 ★
+            document.getElementById('magic-result').innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom: 1px solid #c7d2fe; padding-bottom: 10px;">
+                    <strong>✨ 마법 결과</strong>
+                    <button class="copy-btn" onclick="copyMagicText(this)">📋 결과 복사하기</button>
+                </div>
+                <div id="hidden-magic-text" style="display:none;">${magicText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                <div>${magicText.replace(/\n/g, '<br>')}</div>
+            `;
+            
             document.getElementById('magic-loading').style.display = 'none';
             document.getElementById('magic-result').style.display = 'block';
         } catch (error) {
             alert("마법 실패: " + error.message);
             document.getElementById('magic-loading').style.display = 'none';
         }
+    }
+
+    // ★ 텍스트 복사 함수 ★
+    function copyMagicText(btn) {
+        const textToCopy = document.getElementById('hidden-magic-text').innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = "✅ 복사 완료!";
+            btn.style.backgroundColor = "#16a34a"; // 초록색으로 변경
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.backgroundColor = "#4b5563"; // 원래 색으로 복구
+            }, 2000);
+        }).catch(err => {
+            alert("복사에 실패했습니다. 브라우저 설정을 확인해주세요.");
+        });
     }
 
     function toggleArchive() {
@@ -306,7 +343,6 @@
         document.getElementById('result-section').style.display = 'block';
         alert(`[${item.title}] 수업을 불러왔습니다!`);
         
-        // 불러온 데이터로 현재 메모리 덮어쓰기 (마법 버튼 정상 작동을 위해)
         currentLessonData = { title: item.title, plan: item.plan };
     }
 
